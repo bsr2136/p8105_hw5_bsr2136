@@ -1,0 +1,52 @@
+---
+title: "p8105_hw5_bsr2136"
+author: "Barik Rajpal"
+date: "11/9/2019"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Problem 0
+
+```{r p0, warning=FALSE}
+dir.create("files_for_hw5")
+```
+
+## Problem 1
+
+```{r p1}
+set.seed(10)
+
+iris_with_missing = iris %>% 
+  map_df(~replace(.x, sample(1:150, 20), NA)) %>%
+  mutate(Species = as.character(Species))
+```
+
+### Function to remove missing values
+
+```{r p1.1}
+remove_missing <- function(x) {
+  
+  if (is.numeric(x)) {
+      for (i in 1:length(x)) {
+          if (is.na(x[i])) {
+              x[i] = mean(x,na.rm=T)
+          }
+      }
+  }
+  else if (is.character(x)) {
+          for (i in 1:length(x)) {
+              if (is.na(x[i])) {
+                  x[i] = "virginica"
+              }
+          }
+  }
+  else stop("Not numeric or character")
+  x
+}
+```
+
