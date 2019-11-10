@@ -50,3 +50,10 @@ remove_missing <- function(x) {
 }
 ```
 
+### Applying the function to iris_with_missing df
+
+```{r p1.2}
+map(iris_with_missing,remove_missing)
+```
+
+## Problem 2
