@@ -96,43 +96,88 @@ sim_regression = function(n = 30, beta0 = 2, beta1 = 0, sigma_2 = 50) {
   
   sim_data = tibble(
     x = rnorm(n, mean = 0, sd = 1),
-    y = beta0 + beta1 * x + rnorm(n, 0, sigma_2)
+    y = beta0 + beta1 * x + rnorm(n, 0, sqrt(sigma_2))
   )
   
-  ## NEED TO EDIT THIS PART TO CHANGE FOR HOMEWORK
   ls_fit = lm(y ~ x, data = sim_data)
   
-  tibble(
-    beta0_hat = coef(ls_fit)[1],
-    beta1_hat = coef(ls_fit)[2]
-  )
+  tidy_ls_fit <- broom::tidy(ls_fit)
   
-  ## END OF WHAT NEEDS TO BE EDITED
+  tibble(
+    beta1_hat = pull(tidy_ls_fit,estimate)[2],
+    p_val = pull(tidy_ls_fit,p.value)[2]
+  )
 }
 ```
 
-### running sim_regression 10,000 times for beta_1 = {0,1,2,3,4,5,6}
+### Running sim_regression 10,000 times for beta_1 = {0,1,2,3,4,5,6}, and then combining the tables
 
 ```{r p3.2}
-sim_results_0 <- rerun(10000, sim_regression(beta_1 = 0)) %>% 
-  bind_rows()
+sim_results_0 <- rerun(10000, sim_regression(beta1 = 0)) %>% 
+  bind_rows() %>%
+  mutate(beta1_true = 0)
 
-sim_results_1 <- rerun(10000, sim_regression(beta_1 = 1)) %>% 
-  bind_rows()
+sim_results_1 <- rerun(10000, sim_regression(beta1 = 1)) %>% 
+  bind_rows() %>%
+  mutate(beta1_true = 1)
 
-sim_results_2 <- rerun(10000, sim_regression(beta_1 = 2)) %>% 
-  bind_rows()
+sim_results_2 <- rerun(10000, sim_regression(beta1 = 2)) %>% 
+  bind_rows() %>%
+  mutate(beta1_true = 2)
 
-sim_results_3 <- rerun(10000, sim_regression(beta_1 = 3)) %>% 
-  bind_rows()
+sim_results_3 <- rerun(10000, sim_regression(beta1 = 3)) %>% 
+  bind_rows() %>%
+  mutate(beta1_true = 3)
 
-sim_results_4 <- rerun(10000, sim_regression(beta_1 = 4)) %>% 
-  bind_rows()
+sim_results_4 <- rerun(10000, sim_regression(beta1 = 4)) %>% 
+  bind_rows() %>%
+  mutate(beta1_true = 4)
 
-sim_results_5 <- rerun(10000, sim_regression(beta_1 = 5)) %>% 
-  bind_rows()
+sim_results_5 <- rerun(10000, sim_regression(beta1 = 5)) %>% 
+  bind_rows() %>%
+  mutate(beta1_true = 5)
 
-sim_results_6 <- rerun(10000, sim_regression(beta_1 = 6)) %>% 
-  bind_rows()
+sim_results_6 <- rerun(10000, sim_regression(beta1 = 6)) %>% 
+  bind_rows() %>%
+  mutate(beta1_true = 6)
+
+sim_results_total <- bind_rows(sim_results_0,sim_results_1,sim_results_2,sim_results_3,
+                               sim_results_4,sim_results_5,sim_results_6)
+
 ```
 
+### Plotting proportion of times the null was rejected
+
+```{r p3.3}
+sim_results_total %>%
+  group_by(beta1_true) %>%
+  summarise(num_reject = sum(p_val <= .05),
+            n = n(),
+            proportion_rejected = num_reject/n) %>%
+  ggplot(aes(x=as.factor(beta1_true),y=proportion_rejected)) +
+  geom_col() +
+  xlab("True Beta_1") +
+  ylab("Proportion of Rejected Nulls (Power)")
+```
+
+As the effect size increases, the power also increases, and approaches 1.
+
+### Plotting estimates of beta1_hat
+
+```{r p3.4}
+sim_results_total %>%
+  mutate(beta1_hat_rejected = ifelse(p_val <= .05,beta1_hat,NA)) %>%
+  group_by(beta1_true) %>%
+  summarise(all_samples = mean(beta1_hat),
+            samples_with_null_rejected = mean(beta1_hat_rejected,na.rm=T)) %>%
+  pivot_longer(all_samples:samples_with_null_rejected,
+               names_to = "null_rejected",
+               values_to = "estimate") %>%
+  ggplot(aes(x=as.factor(beta1_true),y=estimate,color = null_rejected)) + 
+  geom_point() +
+  xlab("True Beta_1") +
+  ylab("Estimated Beta_1") +
+  labs(color = "Samples")
+```
+
+The average estimate from the samples where the null was rejected tends to be farther from than true beta1 value than the average estimate from all samples. This is likely because when we only consider samples where the null was rejected, we are somewhat "arbitrarily" excluding samples where the estimate was close to 0. For example, when the true value of beta1 is 2, a sample where the estimate is 0 will be excluded, but a sample where the estimate is 4 will not be excluded, but both are equally likely and equally "incorrect". Therefore we are biasing our estimate away from 0. The logic is slighlty different when beta1 equals 0, but the principle is the same, as we are arbitrarily considering only samples with extreme values, so those few extreme values we are considering are less likely to average out to the true value.
