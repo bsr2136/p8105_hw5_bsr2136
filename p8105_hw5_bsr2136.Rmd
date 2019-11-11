@@ -89,7 +89,50 @@ The experimental subject observation values increase fairly significantly over t
 
 ## Problem 3
 
-```{r p3}
+### sim_regression function
 
+```{r p3.1}
+sim_regression = function(n = 30, beta0 = 2, beta1 = 0, sigma_2 = 50) {
+  
+  sim_data = tibble(
+    x = rnorm(n, mean = 0, sd = 1),
+    y = beta0 + beta1 * x + rnorm(n, 0, sigma_2)
+  )
+  
+  ## NEED TO EDIT THIS PART TO CHANGE FOR HOMEWORK
+  ls_fit = lm(y ~ x, data = sim_data)
+  
+  tibble(
+    beta0_hat = coef(ls_fit)[1],
+    beta1_hat = coef(ls_fit)[2]
+  )
+  
+  ## END OF WHAT NEEDS TO BE EDITED
+}
+```
+
+### running sim_regression 10,000 times for beta_1 = {0,1,2,3,4,5,6}
+
+```{r p3.2}
+sim_results_0 <- rerun(10000, sim_regression(beta_1 = 0)) %>% 
+  bind_rows()
+
+sim_results_1 <- rerun(10000, sim_regression(beta_1 = 1)) %>% 
+  bind_rows()
+
+sim_results_2 <- rerun(10000, sim_regression(beta_1 = 2)) %>% 
+  bind_rows()
+
+sim_results_3 <- rerun(10000, sim_regression(beta_1 = 3)) %>% 
+  bind_rows()
+
+sim_results_4 <- rerun(10000, sim_regression(beta_1 = 4)) %>% 
+  bind_rows()
+
+sim_results_5 <- rerun(10000, sim_regression(beta_1 = 5)) %>% 
+  bind_rows()
+
+sim_results_6 <- rerun(10000, sim_regression(beta_1 = 6)) %>% 
+  bind_rows()
 ```
 
